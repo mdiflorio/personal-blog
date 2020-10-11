@@ -1,4 +1,10 @@
 baseURL = "http://example.org/"
 languageCode = "en-us"
-title = "My New Hugo Site"
-theme = "ananke"
+title = "Madhava Di Florio"
+theme = "hyde"
+
+[Menus]
+  main = [
+      {Name = "Github", URL = "https://github.com/mierz00/"},
+      {Name = "LinkedIn", URL = "https://www.linkedin.com/in/matt-diflorio/"}
+  ]
