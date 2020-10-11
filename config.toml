@@ -8,3 +8,6 @@ theme = "hyde"
       {Name = "Github", URL = "https://github.com/mierz00/"},
       {Name = "LinkedIn", URL = "https://www.linkedin.com/in/matt-diflorio/"}
   ]
+
+[params]
+  description = "Software developer"
