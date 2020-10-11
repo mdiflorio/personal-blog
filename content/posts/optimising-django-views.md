@@ -8,11 +8,11 @@ In the early stages at Nuabee, we had little concern for optimising pages. Our m
 
 To get an idea of just how bad it was, I downloaded [Django Silk](https://github.com/jazzband/django-silk) which is an open source profiler for Django. The cool thing about Django Silk is that it allows you to see each HTTP request, the time it took, and the amount of database queries that were made.
 
-![silk](silk.png)
+![silk](/optimising-django-views/silk.png)
 
 From there I made a spreadsheet to be able to rank the different pages and understand what needed to be optimised.
 
-![excel](excel.png)
+![excel](/optimising-django-views/excel.png)
 
 While some pages are quite complex, we can see that there are pages that have thousands and thousands of database requests. Obviously, this is inefficient and can be done better.
 
