@@ -1,4 +1,4 @@
-baseURL = "https://blog.mattdiflorio.com""
+baseURL = "https://blog.mattdiflorio.com"
 languageCode = "en-us"
 title = "Madhava Di Florio"
 theme = "hyde"
