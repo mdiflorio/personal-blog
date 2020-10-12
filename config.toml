@@ -1,6 +1,6 @@
 baseURL = "https://blog.mattdiflorio.com/"
 languageCode = "en-us"
-title = "Madhava Di Florio"
+title = "Matt Di Florio"
 theme = "hyde"
 
 [Menus]
