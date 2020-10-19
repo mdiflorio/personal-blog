@@ -1,19 +1,30 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Posts on My New Hugo Site</title>
-    <link>http://example.org/posts/</link>
-    <description>Recent content in Posts on My New Hugo Site</description>
+    <title>Posts on Matt Di Florio</title>
+    <link>https://blog.mattdiflorio.com/posts/</link>
+    <description>Recent content in Posts on Matt Di Florio</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 18 Jul 2019 17:18:05 +0100</lastBuildDate><atom:link href="http://example.org/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 18 Oct 2019 17:20:00 +0100</lastBuildDate><atom:link href="https://blog.mattdiflorio.com/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>My First Post</title>
-      <link>http://example.org/posts/my-first-post/</link>
+      <title>Building forms with Django Rest Framework and Vue.js</title>
+      <link>https://blog.mattdiflorio.com/posts/django-vue-form/</link>
+      <pubDate>Fri, 18 Oct 2019 17:20:00 +0100</pubDate>
+      
+      <guid>https://blog.mattdiflorio.com/posts/django-vue-form/</guid>
+      <description>In the early days of Nuabee, we wrote our entire site using Django, and we mixed in sprinkles of jQuery when we needed something slightly dynamic. As the requirements evolved, we needed to implement some more complex interfaces, and jQuery just wasn&amp;rsquo;t cutting it.
+Rather than rewriting our entire frontend with a framework like Vue.js or React, we decided that it would be best to integrate a framework only on the pages that we needed.</description>
+    </item>
+    
+    <item>
+      <title>Optimising Django views</title>
+      <link>https://blog.mattdiflorio.com/posts/optimising-django-views/</link>
       <pubDate>Thu, 18 Jul 2019 17:18:05 +0100</pubDate>
       
-      <guid>http://example.org/posts/my-first-post/</guid>
-      <description>Hugo on Vercel </description>
+      <guid>https://blog.mattdiflorio.com/posts/optimising-django-views/</guid>
+      <description>In the early stages at Nuabee, we had little concern for optimising pages. Our main focus was to develop features and build up the functionality of Atlas. While this worked well in the beginning, some of our pages started to grow complex and page loading times were getting out of control.
+To get an idea of just how bad it was, I downloaded Django Silk which is an open source profiler for Django.</description>
     </item>
     
   </channel>
