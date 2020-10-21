@@ -1,7 +1,7 @@
 
 ---
 title: "Building forms with Django Rest Framework and Vue.js"
-date: 2019-10-18T17:20:00+01:00
+date: 2020-10-18T17:20:00+01:00
 draft: false
 ---
 
