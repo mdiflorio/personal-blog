@@ -11,3 +11,5 @@ theme = "hyde"
 
 [params]
   description = "Software developer"
+
+pygmentsCodeFences = true
