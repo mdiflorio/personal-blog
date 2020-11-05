@@ -12,4 +12,5 @@ theme = "hyde"
 [params]
   description = "Software developer"
 
-pygmentsCodeFences = true
+pygmentsCodefences = true
+pygmentsStyle = "arduino"
