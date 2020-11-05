@@ -6,11 +6,22 @@
     <description>Recent content in Posts on Matt Di Florio</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 18 Oct 2019 17:20:00 +0100</lastBuildDate><atom:link href="https://blog.mattdiflorio.com/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 03 Nov 2020 20:20:00 +0100</lastBuildDate><atom:link href="https://blog.mattdiflorio.com/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>What I didn&#39;t know - interview questions part 1</title>
+      <link>https://blog.mattdiflorio.com/posts/what-i-didnt-know-part-1/</link>
+      <pubDate>Tue, 03 Nov 2020 20:20:00 +0100</pubDate>
+      
+      <guid>https://blog.mattdiflorio.com/posts/what-i-didnt-know-part-1/</guid>
+      <description>Recently, I read on HackerNews that a great way to improve is to learn and fail publicly. After feeling stupid for not knowing the response to a bunch of interview questions, I decided to find the answers to those questions here on my blog.
+I&amp;rsquo;m going to start writing down a list of questions that interviewers have asked me where I wasn&amp;rsquo;t confident in the response I gave.
+What&amp;rsquo;s the difference between em and rem units in CSS?</description>
+    </item>
+    
     <item>
       <title>Building forms with Django Rest Framework and Vue.js</title>
       <link>https://blog.mattdiflorio.com/posts/django-vue-form/</link>
-      <pubDate>Fri, 18 Oct 2019 17:20:00 +0100</pubDate>
+      <pubDate>Sun, 18 Oct 2020 17:20:00 +0100</pubDate>
       
       <guid>https://blog.mattdiflorio.com/posts/django-vue-form/</guid>
       <description>In the early days of Nuabee, we wrote our entire site using Django, and we mixed in sprinkles of jQuery when we needed something slightly dynamic. As the requirements evolved, we needed to implement some more complex interfaces, and jQuery just wasn&amp;rsquo;t cutting it.
@@ -20,7 +31,7 @@ Rather than rewriting our entire frontend with a framework like Vue.js or React,
     <item>
       <title>Optimising Django views</title>
       <link>https://blog.mattdiflorio.com/posts/optimising-django-views/</link>
-      <pubDate>Thu, 18 Jul 2019 17:18:05 +0100</pubDate>
+      <pubDate>Sat, 18 Jul 2020 17:18:05 +0100</pubDate>
       
       <guid>https://blog.mattdiflorio.com/posts/optimising-django-views/</guid>
       <description>In the early stages at Nuabee, we had little concern for optimising pages. Our main focus was to develop features and build up the functionality of Atlas. While this worked well in the beginning, some of our pages started to grow complex and page loading times were getting out of control.

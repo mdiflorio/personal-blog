@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="https://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.75.1" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>What I didn&#39;t know - interview questions part 1 &middot; Matt Di Florio</title>
+  <meta name="description" content="" />
+
+  
+  <link type="text/css" rel="stylesheet" href="https://blog.mattdiflorio.com/css/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://blog.mattdiflorio.com/css/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://blog.mattdiflorio.com/css/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://blog.mattdiflorio.com/css/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  
+</head>
+
+  <body class=" ">
+  <aside class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+      <a href="https://blog.mattdiflorio.com/"><h1>Matt Di Florio</h1></a>
+      <p class="lead">
+       Software developer 
+      </p>
+    </div>
+
+    <nav>
+      <ul class="sidebar-nav">
+        <li><a href="https://blog.mattdiflorio.com/">Home</a> </li>
+        <li><a href="https://github.com/mierz00/"> Github </a></li><li><a href="https://www.linkedin.com/in/matt-diflorio/"> LinkedIn </a></li>
+      </ul>
+    </nav>
+
+    <p>&copy; 2020. All rights reserved. </p>
+  </div>
+</aside>
+
+    <main class="content container">
+    <div class="post">
+  <h1>What I didn&#39;t know - interview questions part 1</h1>
+  <time datetime=2020-11-03T20:20:00&#43;0100 class="post-date">Tue, Nov 3, 2020</time>
+  <p>Recently, I read on HackerNews that a great way to improve is to learn and fail publicly. After feeling stupid for not knowing the response to a bunch of interview questions, I decided to find the answers to those questions here on my blog.</p>
+<p>I&rsquo;m going to start writing down a list of questions that interviewers have asked me where I wasn&rsquo;t confident in the response I gave.</p>
+<h3 id="whats-the-difference-between-em-and-rem-units-in-css">What&rsquo;s the difference between em and rem units in CSS?</h3>
+<p>Em units refer to the font size relative to the direct or nearest parent. For example, if we have a <code>div</code> where the font-size is 16px and inside this <code>div</code> we have an element that has <code>padding: 1em</code>. This is converted to <code>padding: 16px</code>.</p>
+<p>The same thing applies to rem, but rem isn&rsquo;t relative to the nearest parent it will look at the root font size.</p>
+<p>Rather than relying on fixed pixel values which don&rsquo;t change, we can adapt our elements to the various font sizes in different components.</p>
+<p>While em is generally more useful, rem can be good to use with things like padding and margins. For example, if we need even spacing between elements on a page, rem would be a better fit.</p>
+<h3 id="what-things-can-we-do-to-improve-indexing-from-the-google-spider-when-developing-a-spa">What things can we do to improve indexing from the google spider when developing a SPA?</h3>
+<p>Seeing as I haven&rsquo;t been exposed to much SEO, I&rsquo;m going to start with a few points that help for any website.</p>
+<ul>
+<li>Make use of meta tags like title, viewport, language, social tags.</li>
+<li>Put keywords into h1, URLs and title.</li>
+<li>If you have a large site, you should consider creating a <a href="https://support.google.com/webmasters/answer/156184?hl=en">sitemap</a>.</li>
+<li>Use HTTPs</li>
+<li>Organically generate high-quality backlinks. This means getting noticed on other websites who are authorities.</li>
+</ul>
+<h5 id="spa-specific-tips">SPA specific tips:</h5>
+<ul>
+<li>Ensure that there are no JS errors. This can stop the Google crawler from indexing the site.</li>
+<li>Make sure that loading times are as quick as possible.</li>
+<li>Are all the URLs accessible?</li>
+<li>Can all content be viewed without slow JS involved?</li>
+</ul>
+<h5 id="possibilities">Possibilities:</h5>
+<ul>
+<li>Use <a href="https://ssr.vuejs.org/">server-side rendering</a> to return static pages.</li>
+<li>Use something like <a href="https://prerender.io/">prerendering</a> to specifically target web crawlers.</li>
+<li>Content delivery networks to speed up load times from different locations.</li>
+<li>Bundle and minify code.</li>
+<li>Lazy loading when possible.</li>
+</ul>
+<h3 id="what-are-some-things-that-we-can-do-to-improve-accessibility">What are some things that we can do to improve accessibility?</h3>
+<p>In terms of pure visuals we can do a bunch of things:</p>
+<ol>
+<li>Ensure that there is proper contrast between elements on the page.</li>
+<li>Organise the layout.</li>
+<li>Test the page with different text sizes and spaces.</li>
+<li>Ensure links are visible and distinguishable.</li>
+<li>Clear focus styles.</li>
+<li>Don&rsquo;t use colours alone to convey information.</li>
+<li>Provide clear navigation options.</li>
+<li>Provide identifiable feedback.</li>
+</ol>
+<p>Other considerations:</p>
+<ol>
+<li>Ensure that users can navigate the site by using tab and enter.</li>
+<li>Organise links correctly, including when tabbing through them.</li>
+<li>Ensure that each HTML element is correct in terms of semantics. For example, don&rsquo;t use a div as a button.</li>
+<li>Provide alternative text on images.</li>
+<li>Set language in the HTML tag.</li>
+</ol>
+<h3 id="what-are-the-different-ratings-a-aa-aaa">What are the different ratings A, AA AAA?</h3>
+<p>The different ratings refer to the standards for accessibility. They&rsquo;re progressive in the sense that to have an A rating, a website needs to satisfy all of the criteria A. The AA will need to satisfy the criteria for A and AA, and so on.</p>
+<p>The reference can be found <a href="https://www.w3.org/WAI/WCAG21/quickref/?showtechniques=141%2C212%2C211">here</a>.</p>
+<h3 id="how-would-i-improve-the-data-flow-on-an-application-that-needs-real-time-updates">How would I improve the data flow on an application that needs real-time updates?</h3>
+<p>To give a little context, the interviewer asked me this question after I showed a project of mine where the client is sending API requests every 10 seconds. The problem with my approach is that if we have a million clients and they&rsquo;re all sending requests for all the data every 10 seconds it causes unnecessary traffic.</p>
+<p>The answer to the solution is to use WebSockets so that the clients can subscribe to updates.</p>
+<p>The way that WebSockets work is that we open a connection between the server and a client. The server or the client can then send data to each other without having to make new connections. It makes sense for real-time applications where the client or the server can subscribe to events or data changes.</p>
+<p>After speaking to the team at Nuabee, I came to realise that our Django application isn&rsquo;t set up to handle channels and WebSockets. As we&rsquo;re not running Django with ASGI, we don&rsquo;t have async capabilities and Django is only running on a single thread.</p>
+<h3 id="what-is-appsync-from-aws">What is AppSync from AWS?</h3>
+<p>AppSync is a fully managed service that allows you to develop GraphQL APIs. It includes features such as authentication and authorisation, real-time updates to data. It also provides support for a bunch of data services like DynamoDB, AWS Lambda, Elasticsearch, etc.</p>
+<p>There is built-in offline support for the clients. For example, if a client app disconnects from the internet and that client updates their data. The data is automatically synced with the GraphQL data sources once they go back online.</p>
+
+</div>
+
+
+    </main>
+
+    
+      
+    
+  </body>
+</html>

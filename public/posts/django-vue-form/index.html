@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="https://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.75.1" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Building forms with Django Rest Framework and Vue.js &middot; Matt Di Florio</title>
+  <meta name="description" content="" />
+
+  
+  <link type="text/css" rel="stylesheet" href="https://blog.mattdiflorio.com/css/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://blog.mattdiflorio.com/css/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://blog.mattdiflorio.com/css/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://blog.mattdiflorio.com/css/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  
+</head>
+
+  <body class=" ">
+  <aside class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+      <a href="https://blog.mattdiflorio.com/"><h1>Matt Di Florio</h1></a>
+      <p class="lead">
+       Software developer 
+      </p>
+    </div>
+
+    <nav>
+      <ul class="sidebar-nav">
+        <li><a href="https://blog.mattdiflorio.com/">Home</a> </li>
+        <li><a href="https://github.com/mierz00/"> Github </a></li><li><a href="https://www.linkedin.com/in/matt-diflorio/"> LinkedIn </a></li>
+      </ul>
+    </nav>
+
+    <p>&copy; 2020. All rights reserved. </p>
+  </div>
+</aside>
+
+    <main class="content container">
+    <div class="post">
+  <h1>Building forms with Django Rest Framework and Vue.js</h1>
+  <time datetime=2020-10-18T17:20:00&#43;0100 class="post-date">Sun, Oct 18, 2020</time>
+  <p>In the early days of Nuabee, we wrote our entire site using Django, and we mixed in sprinkles of jQuery when we needed something slightly dynamic. As the requirements evolved, we needed to implement some more complex interfaces, and jQuery just wasn&rsquo;t cutting it.</p>
+<p>Rather than rewriting our entire frontend with a framework like Vue.js or React, we decided that it would be best to integrate a framework only on the pages that we needed. The idea was to have the best of both worlds; the ease of development with Django and the dynamic nature of a frontend framework.</p>
+<p>If you&rsquo;re familiar with Django forms, you&rsquo;re well aware of how easy it is to add a model and then create a view that allows you to create or update that data. Django takes care of retrieving the data, error handling, updating or creating new entries in the database. These excellent features make static pages a breeze to develop. But how you take advantage of Django when you&rsquo;re using a frontend framework?</p>
+<p>This blog post will outline how you can replicate the features of Django forms and integrate them within a Vue.js frontend. I&rsquo;m going to assume that you&rsquo;ve already integrated Vue.js within your Django application and you want to know how to build a simple form. I will also be writing all the frontend code in Typescript.</p>
+<p>If you&rsquo;re just after the finished code or you want to see how to integrate webpack into Django, you can take a look <a href="https://github.com/mierz00/django-vuejs-hybrid">here</a>.</p>
+<p>We&rsquo;re going to go through the following steps:</p>
+<ol>
+<li>Add a Django Rest Framework view.</li>
+<li>Add a Serializer.</li>
+<li>Develop the form Vue.js template.
+<ol>
+<li>Add a generic input component</li>
+</ol>
+</li>
+<li>Retrieve the form options.</li>
+<li>Retrieve any initial data if it&rsquo;s an update page.</li>
+<li>Submit the form and handle errors.</li>
+</ol>
+<p>I&rsquo;ve gone ahead and created a new music app and I&rsquo;ve filled it with the following files:</p>
+<pre><code>├── __init__.py
+├── admin.py
+├── apps.py
+├── models.py
+├── serializers.py
+├── static
+│   └── js
+│       ├── album_form
+│       │   ├── app.types.ts
+│       │   ├── components
+│       │   │   ├── AlbumForm.ts
+│       │   │   └── input
+│       │   │       ├── Input.ts
+│       │   │       ├── InputErrors.ts
+│       │   │       ├── InputLabel.ts
+│       │   │       └── templates
+│       │   │           ├── checkbox.ts
+│       │   │           ├── index.ts
+│       │   │           ├── select.ts
+│       │   │           └── standard.ts
+│       │   └── index.ts
+│       └── utils
+│           └── cookies.ts
+├── templates
+│   └── album_form.html
+├── tests.py
+├── urls.py
+└── views.py
+</code></pre><p>We&rsquo;re going to need a couple of models. I&rsquo;ve taken an example from the Django documentation which will work well for us!</p>
+<p>Within our <code>models.py</code> file we&rsquo;re going add the following models:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> django.db <span style="color:#f92672">import</span> models
+
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Musician</span>(models<span style="color:#f92672">.</span>Model):
+    <span style="color:#66d9ef">def</span> __str__(self):
+        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;{0} {1}&#34;</span><span style="color:#f92672">.</span>format(self<span style="color:#f92672">.</span>first_name, self<span style="color:#f92672">.</span>last_name)
+
+    first_name <span style="color:#f92672">=</span> models<span style="color:#f92672">.</span>CharField(max_length<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
+    last_name <span style="color:#f92672">=</span> models<span style="color:#f92672">.</span>CharField(max_length<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
+    instrument <span style="color:#f92672">=</span> models<span style="color:#f92672">.</span>CharField(max_length<span style="color:#f92672">=</span><span style="color:#ae81ff">100</span>)
+
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Album</span>(models<span style="color:#f92672">.</span>Model):
+    <span style="color:#66d9ef">def</span> __str__(self):
+        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;{0} - {1}&#34;</span><span style="color:#f92672">.</span>format(self<span style="color:#f92672">.</span>name, self<span style="color:#f92672">.</span>release_date)
+
+    artist <span style="color:#f92672">=</span> models<span style="color:#f92672">.</span>ForeignKey(Musician, on_delete<span style="color:#f92672">=</span>models<span style="color:#f92672">.</span>CASCADE)
+    name <span style="color:#f92672">=</span> models<span style="color:#f92672">.</span>CharField(max_length<span style="color:#f92672">=</span><span style="color:#ae81ff">100</span>)
+    release_date <span style="color:#f92672">=</span> models<span style="color:#f92672">.</span>DateField()
+    num_stars <span style="color:#f92672">=</span> models<span style="color:#f92672">.</span>IntegerField(verbose_name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Number of stars&#34;</span>)
+
+</code></pre></div><p>Once that&rsquo;s done we need to run a <code>makemigrations</code> and <code>migrate</code> to update our database with the tables.</p>
+<h3 id="views">Views</h3>
+<p>For this example, we&rsquo;re going to be building a form that allows us to create and update an Album.</p>
+<p>Now that we have the two models, we can get right into it. For the moment, we&rsquo;re going to add two generic <a href="https://www.django-rest-framework.org/api-guide/generic-views/">Django Rest Framework views</a> within our <code>[views.py](http://views.py)</code> file.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> django.views.generic <span style="color:#f92672">import</span> TemplateView
+<span style="color:#f92672">from</span> rest_framework <span style="color:#f92672">import</span> generics
+<span style="color:#f92672">from</span> apps.music.models <span style="color:#f92672">import</span> Album
+
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AlbumCreate</span>(TemplateView):
+    template_name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;album_form.html&#34;</span>
+
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AlbumUpdate</span>(TemplateView):
+    template_name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;album_form.html&#34;</span>
+
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get</span>(self, request, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+        album_id <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>kwargs<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#34;pk&#34;</span>)
+
+        <span style="color:#66d9ef">try</span>:
+            Album<span style="color:#f92672">.</span>objects<span style="color:#f92672">.</span>get(id<span style="color:#f92672">=</span>album_id)
+        <span style="color:#66d9ef">except</span> Album<span style="color:#f92672">.</span>DoesNotExist:
+            <span style="color:#66d9ef">raise</span> Http404()
+
+        context <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#34;album_id&#34;</span>: album_id}
+        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>render_to_response(context)
+
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AlbumList</span>(generics<span style="color:#f92672">.</span>ListCreateAPIView):
+    queryset <span style="color:#f92672">=</span> Album<span style="color:#f92672">.</span>objects<span style="color:#f92672">.</span>all()
+    serializer_class <span style="color:#f92672">=</span> AlbumSerializer
+    metadata_class <span style="color:#f92672">=</span> OptionsMetaData
+
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AlbumDetail</span>(generics<span style="color:#f92672">.</span>RetrieveUpdateDestroyAPIView):
+    queryset <span style="color:#f92672">=</span> Album<span style="color:#f92672">.</span>objects<span style="color:#f92672">.</span>all()
+    serializer_class <span style="color:#f92672">=</span> AlbumSerializer
+    metadata_class <span style="color:#f92672">=</span> OptionsMetaData
+</code></pre></div><p>If you&rsquo;re unfamiliar with class based views, Django is going to give us a ton of functionality with these two classes. We will have all the CRUD HTTP functions such as GET, POST, PUT and DELETE.</p>
+<p>We&rsquo;re also going to need two URLs to link up these views inside <code>urls.py</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> django.urls <span style="color:#f92672">import</span> path
+<span style="color:#f92672">from</span> rest_framework.urlpatterns <span style="color:#f92672">import</span> format_suffix_patterns
+<span style="color:#f92672">from</span> <span style="color:#f92672">*</span> <span style="color:#f92672">import</span> views
+
+urlpatterns <span style="color:#f92672">=</span> [
+    path(<span style="color:#e6db74">&#39;albums/&#39;</span>, views<span style="color:#f92672">.</span>AlbumList<span style="color:#f92672">.</span>as_view()),
+    path(<span style="color:#e6db74">&#39;albums/&lt;int:pk&gt;&#39;</span>, views<span style="color:#f92672">.</span>AlbumDetail<span style="color:#f92672">.</span>as_view()),
+]
+
+urlpatterns <span style="color:#f92672">=</span> format_suffix_patterns(urlpatterns)
+</code></pre></div><h3 id="serializer">Serializer</h3>
+<p>Now it&rsquo;s time to create our Album serializer. The serializer will allow Django to be able to easily handle the exchange of data between the frontend and our application.</p>
+<p>We&rsquo;re going to keep things simple and just use a model serializer within <code>serializers.py</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> rest_framework <span style="color:#f92672">import</span> generics
+<span style="color:#f92672">from</span> apps.music.models <span style="color:#f92672">import</span> Album
+<span style="color:#f92672">from</span> apps.music.serializers <span style="color:#f92672">import</span> AlbumSerializer
+<span style="color:#f92672">from</span> django.utils.encoding <span style="color:#f92672">import</span> force_text
+<span style="color:#f92672">from</span> rest_framework.metadata <span style="color:#f92672">import</span> SimpleMetadata
+<span style="color:#f92672">from</span> rest_framework.relations <span style="color:#f92672">import</span> RelatedField, ManyRelatedField
+
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AlbumList</span>(generics<span style="color:#f92672">.</span>ListCreateAPIView):
+    queryset <span style="color:#f92672">=</span> Album<span style="color:#f92672">.</span>objects<span style="color:#f92672">.</span>all()
+    serializer_class <span style="color:#f92672">=</span> AlbumSerializer
+    metadata_class <span style="color:#f92672">=</span> OptionsMetaData
+
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AlbumDetail</span>(generics<span style="color:#f92672">.</span>RetrieveUpdateDestroyAPIView):
+    queryset <span style="color:#f92672">=</span> Album<span style="color:#f92672">.</span>objects<span style="color:#f92672">.</span>all()
+    serializer_class <span style="color:#f92672">=</span> AlbumSerializer
+    metadata_class <span style="color:#f92672">=</span> OptionsMetaData
+
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">OptionsMetaData</span>(SimpleMetadata):
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_field_info</span>(self, field):
+        field_info <span style="color:#f92672">=</span> super(OptionsMetaData, self)<span style="color:#f92672">.</span>get_field_info(field)
+        <span style="color:#66d9ef">if</span> isinstance(field, (RelatedField, ManyRelatedField)):
+            field_info[<span style="color:#e6db74">&#34;choices&#34;</span>] <span style="color:#f92672">=</span> [
+                {
+                    <span style="color:#e6db74">&#34;value&#34;</span>: choice_value,
+                    <span style="color:#e6db74">&#34;display_name&#34;</span>: force_text(choice_name, strings_only<span style="color:#f92672">=</span>True),
+                }
+                <span style="color:#66d9ef">for</span> choice_value, choice_name <span style="color:#f92672">in</span> field<span style="color:#f92672">.</span>get_choices()<span style="color:#f92672">.</span>items()
+            ]
+        <span style="color:#66d9ef">return</span> field_info
+</code></pre></div><p>The <code>OptionsMetaData</code> class is going to allow us to make OPTION HTTP requests to get all the form information.</p>
+<p>To check that everything is working so far, I added a couple of musicians to the database:</p>
+<p><img src="/django-vue-form/db.png" alt="Test data"></p>
+<p>We can now check that our rest views are working correctly if we head to <code>127.0.0.1/8000/music/albums</code></p>
+<p><img src="/django-vue-form/album_list.png" alt="Album list test"></p>
+<p>If we click OPTIONS we should get a list of all the options:</p>
+<p><img src="/django-vue-form/album_list_2.png" alt="Album list test"></p>
+<h3 id="developing-the-vuejs-form">Developing the Vue.js form</h3>
+<p>The way my Django application is set up is that we can create many Vue.js applications, transpile them with Webpack and then import them into a Django template. This way you do this may vary, so I&rsquo;m going to skip that part.</p>
+<p>I&rsquo;ve used Django webpack loader so my template looks like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">{% load render_bundle from webpack_loader %}
+{% render_bundle &#39;chunk-vendors&#39; %}
+
+&lt;<span style="color:#f92672">script</span>&gt;
+    <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">album_id</span> <span style="color:#f92672">=</span>  {<span style="color:#f92672">%</span> <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">album_id</span> <span style="color:#f92672">%</span>}{{ <span style="color:#a6e22e">album_id</span> }}{<span style="color:#f92672">%</span> <span style="color:#66d9ef">else</span> <span style="color:#f92672">%</span>}<span style="color:#66d9ef">undefined</span>{<span style="color:#f92672">%</span> <span style="color:#a6e22e">endif</span> <span style="color:#f92672">%</span>};
+&lt;/<span style="color:#f92672">script</span>&gt;
+
+&lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">id</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;app&#34;</span> <span style="color:#a6e22e">v-cloak</span> &gt;
+    &lt;<span style="color:#f92672">album-form</span>/&gt;
+&lt;/<span style="color:#f92672">div</span>&gt;
+
+{% render_bundle &#39;album_form&#39; %}
+</code></pre></div><p>I&rsquo;ve included the variable <code>album_id</code> so that if we&rsquo;re on the update page, we can get the existing data for an album and then use that id to send a request to update the album.</p>
+<p>Let&rsquo;s create an entry point inside <code>static/js/album_form/index.ts</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-typescript" data-lang="typescript"><span style="color:#66d9ef">import</span> <span style="color:#a6e22e">Vue</span> <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;vue&#39;</span>;
+<span style="color:#66d9ef">import</span> <span style="color:#a6e22e">AlbumForm</span> <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;./components/AlbumForm&#39;</span>;
+
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">app</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">Vue</span>({
+    <span style="color:#a6e22e">el</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;#app&#39;</span>,
+    <span style="color:#a6e22e">components</span><span style="color:#f92672">:</span> { <span style="color:#a6e22e">AlbumForm</span> },
+});
+</code></pre></div><p>We want to create our TypeScript types within <code>app.types.ts</code> where we have our Album interface, a field interface which is used to retrieve the options from Django Rest Framework and a AlbumFormFields that contains fields for our form.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-typescript" data-lang="typescript"><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">Field</span> {
+    <span style="color:#66d9ef">type</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">string</span>;
+    <span style="color:#a6e22e">required</span>: <span style="color:#66d9ef">boolean</span>;
+    <span style="color:#a6e22e">read_only</span>: <span style="color:#66d9ef">boolean</span>;
+    <span style="color:#a6e22e">label</span>: <span style="color:#66d9ef">string</span>;
+    <span style="color:#a6e22e">choices?</span>: <span style="color:#66d9ef">Array</span>&lt;<span style="color:#f92672">FieldChoice</span>&gt;;
+}
+
+<span style="color:#66d9ef">export</span> <span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">FieldChoice</span> {
+    <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">number</span>;
+    <span style="color:#a6e22e">display_name</span>: <span style="color:#66d9ef">string</span>;
+}
+
+<span style="color:#66d9ef">export</span> <span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">AlbumFormFields</span> {
+    <span style="color:#a6e22e">artist</span>: <span style="color:#66d9ef">Field</span>,
+    <span style="color:#a6e22e">name</span>: <span style="color:#66d9ef">Field</span>,
+    <span style="color:#a6e22e">releaseDate</span>: <span style="color:#66d9ef">Field</span>,
+    <span style="color:#a6e22e">numStars</span>: <span style="color:#66d9ef">Field</span>
+}
+
+<span style="color:#66d9ef">export</span> <span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">Album</span> {
+    <span style="color:#a6e22e">artist</span>: <span style="color:#66d9ef">number</span>;
+    <span style="color:#a6e22e">name</span>: <span style="color:#66d9ef">String</span>;
+    <span style="color:#a6e22e">releaseDate</span>: <span style="color:#66d9ef">string</span>;
+    <span style="color:#a6e22e">numStars</span>: <span style="color:#66d9ef">number</span>;
+}
+
+<span style="color:#66d9ef">export</span> <span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">AlbumErrors</span> {
+    <span style="color:#a6e22e">artist?</span>: <span style="color:#66d9ef">Array</span>&lt;<span style="color:#f92672">string</span>&gt;;
+    <span style="color:#a6e22e">name?</span>: <span style="color:#66d9ef">Array</span>&lt;<span style="color:#f92672">string</span>&gt;;
+    <span style="color:#a6e22e">releaseDate?</span>: <span style="color:#66d9ef">Array</span>&lt;<span style="color:#f92672">string</span>&gt;;
+    <span style="color:#a6e22e">numStars?</span>: <span style="color:#66d9ef">Array</span>&lt;<span style="color:#f92672">string</span>&gt;;
+}
+</code></pre></div><p>Next we want to develop the basis of our form. The idea is to have something that flows as follows:</p>
+<ol>
+<li>Load the component.</li>
+<li>Get all the options from the Django Rest API.</li>
+<li>Initialize any data.</li>
+<li>Have the formData object update as we modify any inputs.</li>
+<li>Submit the formData to the server.</li>
+<li>Display any errors or redirect to the next page.</li>
+</ol>
+<p>Inside our <code>components/AlbumForm.ts</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-typescript" data-lang="typescript"><span style="color:#66d9ef">import</span> <span style="color:#a6e22e">Vue</span> <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;vue&#39;</span>;
+<span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">Component</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;vue-property-decorator&#39;</span>;
+<span style="color:#66d9ef">import</span> <span style="color:#a6e22e">Input</span> <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;./input/Input&#39;</span>;
+<span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">Album</span>, <span style="color:#a6e22e">AlbumErrors</span>, <span style="color:#a6e22e">AlbumFormFields</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;../app.types&#39;</span>;
+<span style="color:#66d9ef">import</span> <span style="color:#a6e22e">axios</span> <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;axios&#39;</span>;
+
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">template</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">`
+</span><span style="color:#e6db74">    &lt;div v-if=&#34;loading&#34; &gt;
+</span><span style="color:#e6db74">        Loading...
+</span><span style="color:#e6db74">    &lt;/div&gt;
+</span><span style="color:#e6db74">    &lt;form 
+</span><span style="color:#e6db74">        v-else 
+</span><span style="color:#e6db74">        @submit=&#34;submitForm&#34; &gt;   
+</span><span style="color:#e6db74">            &lt;Input 
+</span><span style="color:#e6db74">                v-for=&#34;(field, fieldName) in fields&#34;
+</span><span style="color:#e6db74">                :key=&#34;fieldName&#34;
+</span><span style="color:#e6db74">                :name=&#34;fieldName&#34;
+</span><span style="color:#e6db74">                :initial=&#34;formData[fieldName]&#34;
+</span><span style="color:#e6db74">                :field=&#34;field&#34;
+</span><span style="color:#e6db74">                :errors=&#34;errors[fieldName]&#34;
+</span><span style="color:#e6db74">                @on-change=&#34;onChangeField&#34;
+</span><span style="color:#e6db74">            /&gt;
+</span><span style="color:#e6db74">            &lt;div&gt;
+</span><span style="color:#e6db74">              &lt;button type=&#34;submit&#34;&gt;
+</span><span style="color:#e6db74">                Submit
+</span><span style="color:#e6db74">              &lt;/button&gt;
+</span><span style="color:#e6db74">            &lt;/div&gt;
+</span><span style="color:#e6db74">    &lt;/form&gt;
+</span><span style="color:#e6db74">`</span>;
+
+<span style="color:#66d9ef">@Component</span>({
+    <span style="color:#a6e22e">template</span>,
+    <span style="color:#a6e22e">name</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;AlbumForm&#39;</span>,
+    <span style="color:#a6e22e">components</span><span style="color:#f92672">:</span> { <span style="color:#a6e22e">Input</span> },
+})
+<span style="color:#66d9ef">export</span> <span style="color:#66d9ef">default</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AlbumForm</span> <span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Vue</span> {
+
+    <span style="color:#a6e22e">formData</span>: <span style="color:#66d9ef">Album</span> <span style="color:#f92672">=</span> &lt;<span style="color:#f92672">Album</span>&gt;{};
+    <span style="color:#a6e22e">fields</span>: <span style="color:#66d9ef">AlbumFormFields</span> <span style="color:#f92672">=</span> &lt;<span style="color:#f92672">AlbumFormFields</span>&gt;{};
+    <span style="color:#a6e22e">errors</span>: <span style="color:#66d9ef">AlbumErrors</span> <span style="color:#f92672">=</span> {};
+    <span style="color:#a6e22e">loading</span>: <span style="color:#66d9ef">boolean</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>;
+
+    <span style="color:#a6e22e">mounted() {</span>
+        <span style="color:#75715e">// Initialise our form data.
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// This data is what we will send to the server
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">formData</span> <span style="color:#f92672">=</span> {
+            <span style="color:#a6e22e">artist</span>: <span style="color:#66d9ef">0</span>,
+            <span style="color:#a6e22e">name</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;test&#39;</span>,
+            <span style="color:#a6e22e">releaseDate</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;&#39;</span>,
+            <span style="color:#a6e22e">numStars</span>: <span style="color:#66d9ef">0</span>,
+        };
+
+        <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">getFormOptions</span>();
+        <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">getAlbumData</span>();
+    }
+
+    <span style="color:#a6e22e">getAlbumData() {</span>
+		  <span style="color:#75715e">// TODO - get album data if the page is update
+</span><span style="color:#75715e"></span>    }
+
+    <span style="color:#a6e22e">getFormOptions() {</span>
+			<span style="color:#75715e">// TODO - add get form
+</span><span style="color:#75715e"></span>    }
+
+    <span style="color:#a6e22e">submitForm</span>(<span style="color:#a6e22e">e</span>: <span style="color:#66d9ef">Event</span>) {
+			 <span style="color:#75715e">// TODO - submit form
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">preventDefault</span>();
+    }
+
+    <span style="color:#75715e">// Handle the on change of any input
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">onChangeField</span>(<span style="color:#a6e22e">field</span>: <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">any</span>) {
+        <span style="color:#75715e">// @ts-ignore - so that we can use field inside formData
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">formData</span>[<span style="color:#a6e22e">field</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">value</span>;
+    }
+}
+</code></pre></div><p>Here there a quite a few things going on, we have created a AlbumForm class, and we&rsquo;ve added a form to our template. Inside the form we display every Input which is in the fields.</p>
+<p>For the moment, we haven&rsquo;t written <code>getAlbumData()</code>, <code>getFormOptions()</code> and the <code>submitForm()</code> functions. We&rsquo;re going to gloss over that for a second and write the code for our generic Input.</p>
+<h3 id="generic-input-component-for-django-forms">Generic input component for Django forms</h3>
+<p>I wanted to have a Vue.js component that would be able to display the standard inputs, like a checkbox, a selector or just a text input. To do this I used the following setup within an <code>input</code> folder :</p>
+<pre><code>├── components
+   ├── AlbumForm.ts
+   └── input
+       ├── Input.ts
+       ├── InputErrors.ts
+       ├── InputLabel.ts
+       └── templates
+           ├── checkbox.ts
+           ├── index.ts
+           ├── select.ts
+           └── standard.ts
+</code></pre><p>Inside our <code>Input.ts</code> file we have:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-typescript" data-lang="typescript"><span style="color:#66d9ef">import</span> <span style="color:#a6e22e">Vue</span> <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;vue&#39;</span>;
+<span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">Component</span>, <span style="color:#a6e22e">Prop</span>, <span style="color:#a6e22e">Watch</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;vue-property-decorator&#39;</span>;
+<span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">Field</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;../../app.types&#39;</span>;
+<span style="color:#66d9ef">import</span> <span style="color:#a6e22e">templates</span> <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#34;./templates&#34;</span>;
+<span style="color:#66d9ef">import</span> <span style="color:#a6e22e">InputLabel</span> <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;./InputLabel&#39;</span>;
+<span style="color:#66d9ef">import</span> <span style="color:#a6e22e">InputErrors</span> <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;./InputErrors&#39;</span>;
+
+<span style="color:#66d9ef">@Component</span>({
+    <span style="color:#a6e22e">name</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;Input&#39;</span>,
+    <span style="color:#a6e22e">components</span><span style="color:#f92672">:</span> {<span style="color:#a6e22e">InputLabel</span>, <span style="color:#a6e22e">InputErrors</span>}
+})
+<span style="color:#66d9ef">export</span> <span style="color:#66d9ef">default</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Input</span> <span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Vue</span> {
+    <span style="color:#66d9ef">@Prop</span>()
+    <span style="color:#a6e22e">name</span><span style="color:#f92672">!:</span> <span style="color:#66d9ef">string</span>;
+
+    <span style="color:#66d9ef">@Prop</span>()
+    <span style="color:#a6e22e">field</span><span style="color:#f92672">!:</span> <span style="color:#a6e22e">Field</span>;
+
+    <span style="color:#66d9ef">@Prop</span>()
+    <span style="color:#a6e22e">initial</span><span style="color:#f92672">!:</span> <span style="color:#66d9ef">any</span>;
+
+    <span style="color:#66d9ef">@Prop</span>()
+    <span style="color:#a6e22e">errors</span><span style="color:#f92672">?:</span> [];
+
+    <span style="color:#66d9ef">@Prop</span>({ <span style="color:#66d9ef">default</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">false</span> })
+    <span style="color:#a6e22e">multiSelect</span><span style="color:#f92672">!:</span> <span style="color:#66d9ef">boolean</span>;
+
+    <span style="color:#75715e">// DATA
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">binding</span>: <span style="color:#66d9ef">any</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;&#39;</span>;
+
+    <span style="color:#75715e">// COMPUTED
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">get</span> <span style="color:#a6e22e">InputTemplate() {</span>
+        <span style="color:#66d9ef">switch</span>(<span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">fieldType</span>) {
+            <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;checkbox&#39;</span><span style="color:#f92672">:</span>
+                <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">templates</span>.<span style="color:#a6e22e">checkbox</span>;
+            <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;field&#39;</span><span style="color:#f92672">:</span>
+                <span style="color:#66d9ef">return</span>  <span style="color:#a6e22e">templates</span>.<span style="color:#a6e22e">select</span>;
+            <span style="color:#66d9ef">default</span><span style="color:#f92672">:</span>
+                <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">templates</span>.<span style="color:#a6e22e">standard</span>;
+        }
+
+    }
+
+    <span style="color:#66d9ef">get</span> <span style="color:#a6e22e">fieldType() {</span>
+        <span style="color:#66d9ef">switch</span> (<span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">field</span>.<span style="color:#66d9ef">type</span>) {
+            <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;string&#39;</span><span style="color:#f92672">:</span>
+                <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#39;text&#39;</span>;
+            <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;integer&#39;</span><span style="color:#f92672">:</span>
+                <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#39;number&#39;</span>;
+            <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;boolean&#39;</span><span style="color:#f92672">:</span>
+                <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#39;checkbox&#39;</span>;
+            <span style="color:#66d9ef">default</span><span style="color:#f92672">:</span>
+                <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">field</span>.<span style="color:#66d9ef">type</span>;
+        }
+    }
+
+    <span style="color:#66d9ef">@Watch</span>(<span style="color:#e6db74">&#39;binding&#39;</span>)
+    <span style="color:#a6e22e">onChangeValue</span>(<span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">any</span>) {
+        <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$emit</span>(<span style="color:#e6db74">&#39;on-change&#39;</span>, <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">value</span>);
+    }
+
+    <span style="color:#75715e">// METHODS
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">created() {</span>
+        <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">binding</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">initial</span>;
+        <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">$options</span>.<span style="color:#a6e22e">template</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">InputTemplate</span>;
+    }
+
+}
+</code></pre></div><p>This component will allow us to render any type of Django input. Depending on what the <code>field</code> attribute is, we will display a different template.</p>
+<p>I&rsquo;ve made three templates:</p>
+<ol>
+<li>Checkbox</li>
+<li>Standard (numbers, text, dates)</li>
+<li>Select (single select or multiple select)</li>
+</ol>
+<p><code>checkbox.ts</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-typescript" data-lang="typescript"><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">checkbox</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">`
+</span><span style="color:#e6db74">        &lt;div&gt;
+</span><span style="color:#e6db74">            &lt;div&gt;
+</span><span style="color:#e6db74">                &lt;input
+</span><span style="color:#e6db74">                    :name=&#34;name&#34;
+</span><span style="color:#e6db74">                    :type=&#34;fieldType&#34;
+</span><span style="color:#e6db74">                    v-model=&#34;binding&#34;
+</span><span style="color:#e6db74">                /&gt;
+</span><span style="color:#e6db74">                &lt;InputLabel :label=&#34;field.label&#34; :required=&#34;field.required&#34; /&gt;
+</span><span style="color:#e6db74">                &lt;InputErrors :errors=&#34;errors&#34; /&gt;
+</span><span style="color:#e6db74">            &lt;/div&gt;
+</span><span style="color:#e6db74">        &lt;/div&gt;
+</span><span style="color:#e6db74">`</span>;
+</code></pre></div><p><code>standard.ts</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-tsx" data-lang="tsx"><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">standard</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">`
+</span><span style="color:#e6db74">        &lt;div&gt;
+</span><span style="color:#e6db74">            &lt;InputLabel :label=&#34;field.label&#34; :required=&#34;field.required&#34; /&gt;
+</span><span style="color:#e6db74">            &lt;input
+</span><span style="color:#e6db74">                :name=&#34;name&#34;
+</span><span style="color:#e6db74">                :type=&#34;fieldType&#34;
+</span><span style="color:#e6db74">                v-model=&#34;binding&#34;
+</span><span style="color:#e6db74">                :required=&#34;field.required&#34;
+</span><span style="color:#e6db74">            /&gt;
+</span><span style="color:#e6db74">            &lt;InputErrors :errors=&#34;errors&#34; /&gt;
+</span><span style="color:#e6db74">        &lt;/div&gt;
+</span><span style="color:#e6db74">`</span>;
+</code></pre></div><p><code>select.ts</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-tsx" data-lang="tsx"><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">select</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">`
+</span><span style="color:#e6db74">        &lt;div&gt;
+</span><span style="color:#e6db74">            &lt;InputLabel :label=&#34;field.label&#34; :required=&#34;field.required&#34; /&gt;
+</span><span style="color:#e6db74">            &lt;select
+</span><span style="color:#e6db74">                :name=&#34;name&#34;
+</span><span style="color:#e6db74">                :multiple=&#34;multiSelect&#34;
+</span><span style="color:#e6db74">                :required=&#34;field.required&#34;
+</span><span style="color:#e6db74">                v-model=&#34;binding&#34;
+</span><span style="color:#e6db74">            &gt;
+</span><span style="color:#e6db74">                &lt;option v-for=&#34;choice in field.choices&#34; :value=&#34;choice.value&#34;&gt;
+</span><span style="color:#e6db74">                    {{ choice.display_name }}
+</span><span style="color:#e6db74">                &lt;/option&gt;
+</span><span style="color:#e6db74">            &lt;/select&gt;
+</span><span style="color:#e6db74">            &lt;InputErrors :errors=&#34;errors&#34; /&gt;
+</span><span style="color:#e6db74">        &lt;/div&gt;
+</span><span style="color:#e6db74">`</span>;
+</code></pre></div><p>You may have noticed, there are two components within these templates. <code>InputLabel</code> and <code>InputErrors</code>. I&rsquo;ve added these just to simplify the code a little bit.</p>
+<p><code>InputLabel.ts</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-typescript" data-lang="typescript"><span style="color:#66d9ef">import</span> <span style="color:#a6e22e">Vue</span> <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#34;vue&#34;</span>;
+<span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">Component</span>, <span style="color:#a6e22e">Prop</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;vue-property-decorator&#39;</span>;
+
+<span style="color:#66d9ef">@Component</span>({
+    <span style="color:#a6e22e">name</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;InputLabel&#34;</span>,
+    <span style="color:#a6e22e">template</span><span style="color:#f92672">:</span> <span style="color:#e6db74">`
+</span><span style="color:#e6db74">        &lt;label&gt;{{ label }}&lt;span v-if=&#34;required&#34;&gt;*&lt;/span&gt;&lt;/label&gt;
+</span><span style="color:#e6db74">    `</span>
+})
+<span style="color:#66d9ef">export</span> <span style="color:#66d9ef">default</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">InputLabel</span> <span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Vue</span> {
+    <span style="color:#66d9ef">@Prop</span>()
+    <span style="color:#a6e22e">label</span><span style="color:#f92672">!:</span> <span style="color:#66d9ef">string</span>;
+
+    <span style="color:#66d9ef">@Prop</span>({<span style="color:#66d9ef">default</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">false</span>})
+    <span style="color:#a6e22e">required</span><span style="color:#f92672">!:</span> <span style="color:#66d9ef">boolean</span>;
+}
+</code></pre></div><p><code>InputErrors.ts</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-typescript" data-lang="typescript"><span style="color:#66d9ef">import</span> <span style="color:#a6e22e">Vue</span> <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#34;vue&#34;</span>;
+<span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">Component</span>, <span style="color:#a6e22e">Prop</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;vue-property-decorator&#39;</span>;
+
+<span style="color:#66d9ef">@Component</span>({
+    <span style="color:#a6e22e">name</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;InputErrors&#34;</span>,
+    <span style="color:#a6e22e">template</span><span style="color:#f92672">:</span> <span style="color:#e6db74">`
+</span><span style="color:#e6db74">        &lt;div v-if=&#34;errors&#34;&gt;
+</span><span style="color:#e6db74">            &lt;p v-for=&#34;error in errors&#34;&gt;
+</span><span style="color:#e6db74">                {{ error }}
+</span><span style="color:#e6db74">            &lt;/p&gt;
+</span><span style="color:#e6db74">        &lt;/div&gt;
+</span><span style="color:#e6db74">    `</span>
+})
+<span style="color:#66d9ef">export</span> <span style="color:#66d9ef">default</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">InputErrors</span> <span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Vue</span> {
+    <span style="color:#66d9ef">@Prop</span>()
+    <span style="color:#a6e22e">errors</span><span style="color:#f92672">!:</span> Array&lt;<span style="color:#f92672">string</span>&gt;;
+}
+</code></pre></div><h3 id="getting-the-csrf-token">Getting the CSRF Token</h3>
+<p>We&rsquo;ve set up our interface and the components, but now we need a way to communicate with the Django Rest API.</p>
+<p>When using making POST or PUT requests to Django, you normally need to have a CSRF token. In our case, we can get this token from the cookies of the page. To do this, I added <code>utils/cookies.ts</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-typescript" data-lang="typescript"><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">getCookie</span>(<span style="color:#a6e22e">c_name</span>: <span style="color:#66d9ef">string</span>)<span style="color:#f92672">:</span> <span style="color:#66d9ef">string</span> {
+    <span style="color:#66d9ef">if</span> (document.<span style="color:#a6e22e">cookie</span>.<span style="color:#a6e22e">length</span> <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>) {
+        <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">c_start</span> <span style="color:#f92672">=</span> document.<span style="color:#a6e22e">cookie</span>.<span style="color:#a6e22e">indexOf</span>(<span style="color:#a6e22e">c_name</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;=&#39;</span>);
+        <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">c_start</span> <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+            <span style="color:#a6e22e">c_start</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">c_start</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">c_name</span>.<span style="color:#a6e22e">length</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>;
+            <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">c_end</span> <span style="color:#f92672">=</span> document.<span style="color:#a6e22e">cookie</span>.<span style="color:#a6e22e">indexOf</span>(<span style="color:#e6db74">&#39;;&#39;</span>, <span style="color:#a6e22e">c_start</span>);
+            <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">c_end</span> <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#a6e22e">c_end</span> <span style="color:#f92672">=</span> document.<span style="color:#a6e22e">cookie</span>.<span style="color:#a6e22e">length</span>;
+            <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">unescape</span>(document.<span style="color:#a6e22e">cookie</span>.<span style="color:#a6e22e">substring</span>(<span style="color:#a6e22e">c_start</span>, <span style="color:#a6e22e">c_end</span>));
+        }
+    }
+    <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#39;&#39;</span>;
+};
+</code></pre></div><p>And we can add this to all of our request headers when we use <code>axios</code> module.</p>
+<p><code>AlbumForm.ts</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-typescript" data-lang="typescript"><span style="color:#66d9ef">import</span> <span style="color:#a6e22e">Vue</span> <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;vue&#39;</span>;
+<span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">Component</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;vue-property-decorator&#39;</span>;
+<span style="color:#66d9ef">import</span> <span style="color:#a6e22e">Input</span> <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;./input/Input&#39;</span>;
+<span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">Album</span>, <span style="color:#a6e22e">AlbumErrors</span>, <span style="color:#a6e22e">AlbumFormFields</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;../app.types&#39;</span>;
+<span style="color:#66d9ef">import</span> <span style="color:#a6e22e">axios</span> <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;axios&#39;</span>;
+<span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">getCookie</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;../../utils/cookies&#39;</span>;
+
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">Axios</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">axios</span>.<span style="color:#a6e22e">create</span>({
+    <span style="color:#a6e22e">baseURL</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;/music&#39;</span>,
+    <span style="color:#a6e22e">headers</span><span style="color:#f92672">:</span> { <span style="color:#e6db74">&#39;X-CSRFToken&#39;</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">getCookie</span>(<span style="color:#e6db74">&#39;csrftoken&#39;</span>) },
+});
+
+...
+</code></pre></div><p>Now any of our requests will contain our CSRF token.</p>
+<h3 id="getting-the-field-options">Getting the field options</h3>
+<p>To get all the field options, we take advantage of the Django Rest Framework metadata. By sending an OPTION request to the API, we can retrieve all the options and choices. Including foreign key fields.</p>
+<p>Let&rsquo;s fill out our <code>getFormOptions()</code> function within <code>AlbumForm.ts</code> :</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-typescript" data-lang="typescript"><span style="color:#a6e22e">getFormOptions() {</span>
+        <span style="color:#a6e22e">Axios</span>.<span style="color:#a6e22e">options</span>(<span style="color:#e6db74">&#39;/api/albums&#39;</span>)
+            .<span style="color:#a6e22e">then</span>((<span style="color:#a6e22e">res</span>) <span style="color:#f92672">=&gt;</span> {
+                <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">fields</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">data</span>.<span style="color:#a6e22e">actions</span>.<span style="color:#a6e22e">POST</span>;
+            })
+            .<span style="color:#66d9ef">catch</span>((<span style="color:#a6e22e">err</span>) <span style="color:#f92672">=&gt;</span> {
+                <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#39;err&#39;</span>, <span style="color:#a6e22e">err</span>);
+            })
+            .<span style="color:#66d9ef">finally</span>(() <span style="color:#f92672">=&gt;</span> {
+                <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">loading</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">false</span>;
+            });
+    }
+</code></pre></div><p>We should now be able to load the page and see our fields with the different forms and options:</p>
+<p><img src="/django-vue-form/form.png" alt="form"></p>
+<p>If we click on the Artist, we should see :</p>
+<p><img src="/django-vue-form/form_2.png" alt="Form select"></p>
+<h3 id="submit-form-function">Submit form function</h3>
+<p>Before we submit our form we want to handle two different cases, if it&rsquo;s an update or if it&rsquo;s a create page. If it&rsquo;s an update page we want to submit a PUT request to <code>/music/api/albums/&lt;int:pk&gt;</code>. This means that we need to use the <code>album_id</code> which was sent to the page using the <code>get_context</code> within the update view.</p>
+<p>We want to update our data and <code>mounted()</code> function within <code>AlbumForm.ts</code>. This way we can access the album_id within any of our Vue.js functions.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-typescript" data-lang="typescript"><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">default</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AlbumForm</span> <span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Vue</span> {
+
+    <span style="color:#a6e22e">album_id</span>: <span style="color:#66d9ef">number</span> <span style="color:#f92672">|</span> <span style="color:#66d9ef">undefined</span>; <span style="color:#75715e">// ADD THIS
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">formData</span>: <span style="color:#66d9ef">Album</span> <span style="color:#f92672">=</span> &lt;<span style="color:#f92672">Album</span>&gt;{};
+    <span style="color:#a6e22e">fields</span>: <span style="color:#66d9ef">AlbumFormFields</span> <span style="color:#f92672">=</span> &lt;<span style="color:#f92672">AlbumFormFields</span>&gt;{};
+    <span style="color:#a6e22e">errors</span>: <span style="color:#66d9ef">AlbumErrors</span> <span style="color:#f92672">=</span> {};
+    <span style="color:#a6e22e">loading</span>: <span style="color:#66d9ef">boolean</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>;
+
+    <span style="color:#a6e22e">mounted() {</span>
+        <span style="color:#75715e">// @ts-ignore - Comes from the Django template
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">album_id</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">album_id</span>;
+        
+        <span style="color:#75715e">// Initialise our form data.
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// This data is what we will send to the server
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">formData</span> <span style="color:#f92672">=</span> {
+            <span style="color:#a6e22e">artist</span>: <span style="color:#66d9ef">0</span>,
+            <span style="color:#a6e22e">name</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;test&#39;</span>,
+            <span style="color:#a6e22e">releaseDate</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;&#39;</span>,
+            <span style="color:#a6e22e">numStars</span>: <span style="color:#66d9ef">0</span>,
+        };
+
+        <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">getFormOptions</span>();
+        <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">getAlbumData</span>();
+    }
+</code></pre></div><p>The <code>submitForm()</code> function is relatively simple, if we&rsquo;re on the update page it should send a PUT request to the API, otherwise it will send a POST request with the form data.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-typescript" data-lang="typescript"><span style="color:#a6e22e">submitForm</span>(<span style="color:#a6e22e">e</span>: <span style="color:#66d9ef">Event</span>) {
+    <span style="color:#66d9ef">if</span> (<span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">album_id</span>) {
+        <span style="color:#a6e22e">Axios</span>.<span style="color:#a6e22e">put</span>(<span style="color:#e6db74">`/api/albums/</span><span style="color:#e6db74">${</span><span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">album_id</span><span style="color:#e6db74">}</span><span style="color:#e6db74">`</span>, <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">formData</span>)
+            .<span style="color:#a6e22e">then</span>(<span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">handleSuccessSubmit</span>)
+            .<span style="color:#66d9ef">catch</span>(<span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">handleErrorSubmit</span>);
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#a6e22e">Axios</span>.<span style="color:#a6e22e">post</span>(<span style="color:#e6db74">`/api/albums/`</span>, <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">formData</span>)
+            .<span style="color:#a6e22e">then</span>(<span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">handleSuccessSubmit</span>)
+            .<span style="color:#66d9ef">catch</span>(<span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">handleErrorSubmit</span>);
+    }
+
+    <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">preventDefault</span>();
+}
+
+<span style="color:#a6e22e">handleSuccessSubmit</span>(<span style="color:#a6e22e">res</span>: <span style="color:#66d9ef">any</span>) {
+        <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#a6e22e">res</span>);
+  }
+
+<span style="color:#a6e22e">handleErrorSubmit</span>(<span style="color:#a6e22e">err</span>: <span style="color:#66d9ef">any</span>) {
+    <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">errors</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">response</span>.<span style="color:#a6e22e">data</span>;
+}
+</code></pre></div><p>To finish it up, I&rsquo;ve added some styles with Tailwind CSS :)</p>
+<p><img src="/django-vue-form/screenshot.png" alt="Screenshot with Tailwind"></p>
+
+</div>
+
+
+    </main>
+
+    
+      
+    
+  </body>
+</html>

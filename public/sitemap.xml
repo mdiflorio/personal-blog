@@ -3,23 +3,28 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>https://blog.mattdiflorio.com/posts/django-vue-form/</loc>
-    <lastmod>2019-10-18T17:20:00+01:00</lastmod>
-  </url>
-  
-  <url>
     <loc>https://blog.mattdiflorio.com/</loc>
-    <lastmod>2019-10-18T17:20:00+01:00</lastmod>
+    <lastmod>2020-11-03T20:20:00+01:00</lastmod>
   </url>
   
   <url>
     <loc>https://blog.mattdiflorio.com/posts/</loc>
-    <lastmod>2019-10-18T17:20:00+01:00</lastmod>
+    <lastmod>2020-11-03T20:20:00+01:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://blog.mattdiflorio.com/posts/what-i-didnt-know-part-1/</loc>
+    <lastmod>2020-11-03T20:20:00+01:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://blog.mattdiflorio.com/posts/django-vue-form/</loc>
+    <lastmod>2020-10-18T17:20:00+01:00</lastmod>
   </url>
   
   <url>
     <loc>https://blog.mattdiflorio.com/posts/optimising-django-views/</loc>
-    <lastmod>2019-07-18T17:18:05+01:00</lastmod>
+    <lastmod>2020-07-18T17:18:05+01:00</lastmod>
   </url>
   
   <url>

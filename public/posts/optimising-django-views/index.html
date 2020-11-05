@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="https://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.75.1" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Optimising Django views &middot; Matt Di Florio</title>
+  <meta name="description" content="" />
+
+  
+  <link type="text/css" rel="stylesheet" href="https://blog.mattdiflorio.com/css/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://blog.mattdiflorio.com/css/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://blog.mattdiflorio.com/css/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://blog.mattdiflorio.com/css/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  
+</head>
+
+  <body class=" ">
+  <aside class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+      <a href="https://blog.mattdiflorio.com/"><h1>Matt Di Florio</h1></a>
+      <p class="lead">
+       Software developer 
+      </p>
+    </div>
+
+    <nav>
+      <ul class="sidebar-nav">
+        <li><a href="https://blog.mattdiflorio.com/">Home</a> </li>
+        <li><a href="https://github.com/mierz00/"> Github </a></li><li><a href="https://www.linkedin.com/in/matt-diflorio/"> LinkedIn </a></li>
+      </ul>
+    </nav>
+
+    <p>&copy; 2020. All rights reserved. </p>
+  </div>
+</aside>
+
+    <main class="content container">
+    <div class="post">
+  <h1>Optimising Django views</h1>
+  <time datetime=2020-07-18T17:18:05&#43;0100 class="post-date">Sat, Jul 18, 2020</time>
+  <p>In the early stages at Nuabee, we had little concern for optimising pages. Our main focus was to develop features and build up the functionality of Atlas. While this worked well in the beginning, some of our pages started to grow complex and page loading times were getting out of control.</p>
+<p>To get an idea of just how bad it was, I downloaded <a href="https://github.com/jazzband/django-silk">Django Silk</a> which is an open source profiler for Django. The cool thing about Django Silk is that it allows you to see each HTTP request, the time it took, and the amount of database queries that were made.</p>
+<p><img src="/optimising-django-views/silk.png" alt="silk"></p>
+<p>From there I made a spreadsheet to be able to rank the different pages and understand what needed to be optimised.</p>
+<p><img src="/optimising-django-views/excel.png" alt="excel"></p>
+<p>While some pages are quite complex, we can see that there are pages that have thousands and thousands of database requests. Obviously, this is inefficient and can be done better.</p>
+<p>When searching how to optimise pages with Django, I came across 3 main ideas.</p>
+<ol>
+<li>Using select_related and prefetch_related</li>
+<li>Using cache</li>
+<li>Loading data into memory.</li>
+</ol>
+<h2 id="using-select_related-and-prefetch_related">Using select_related and prefetch_related</h2>
+<p>One of the great things about Django is its ORM. With a simple command we can fetch all the items in the database and access any of their foreign keys. In this example we have a Machine model has a Site as a foreign key:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">machines <span style="color:#f92672">=</span> Machine<span style="color:#f92672">.</span>objects<span style="color:#f92672">.</span>all()
+</code></pre></div><p>We can then iterate over all the machines and print the machine&rsquo;s site:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">for</span> machine <span style="color:#f92672">in</span> machines:
+	<span style="color:#66d9ef">print</span>(machine<span style="color:#f92672">.</span>site<span style="color:#f92672">.</span>name)
+</code></pre></div><p>Even though we haven&rsquo;t done much, this is a terrible way to access an object&rsquo;s foreign keys. The problem here is that Django will query the database each time it has to obtain the machine&rsquo;s site. This also applies when using models in Django templates. If you try and access a models foreign key within a template, Django will query the database every single time.</p>
+<p>The much better approach is to use <code>select_related</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">machines <span style="color:#f92672">=</span> Machine<span style="color:#f92672">.</span>objects<span style="color:#f92672">.</span>select_related(<span style="color:#e6db74">&#34;site&#34;</span>)
+</code></pre></div><p><code>select_related</code> is going to join the Machine and the Site tables so that there will only be one database query. We can access all the site&rsquo;s properties as Django has done a join at the time of getting the machines.</p>
+<p>Now, imagine that our Machines have many ports, and for each machine we want to print each of its ports.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">machines <span style="color:#f92672">=</span> Machine<span style="color:#f92672">.</span>objects<span style="color:#f92672">.</span>all()
+<span style="color:#66d9ef">for</span> machine <span style="color:#f92672">in</span> machines:
+	<span style="color:#66d9ef">for</span> port <span style="color:#f92672">in</span> machine<span style="color:#f92672">.</span>ports:
+		<span style="color:#66d9ef">print</span>(port)
+</code></pre></div><p>We now encounter the same problem as before, Django will make a new database query each time we need to get a port. But this time, seeing as it&rsquo;s a many-to-many relationship we cannot use <code>select_related</code>, we must use <code>prefetch_related</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">machines <span style="color:#f92672">=</span> Machine<span style="color:#f92672">.</span>objects<span style="color:#f92672">.</span>prefetch_related(<span style="color:#e6db74">&#34;ports&#34;</span>)
+</code></pre></div><p>Now every time we access the machines ports, they will already be stored in memory and Django won&rsquo;t make a database query for each port.</p>
+<h2 id="using-cache">Using cache</h2>
+<p>While this is pretty simple, we can use cache to greatly improve the loading page speed.</p>
+<p>Imagine that we have a page that is loaded frequently and there is a complex calculation that needs to be done. If you know that the data won&rsquo;t change for a certain period of time, we can put it into the cache.</p>
+<p>To set cache we can use:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">data <span style="color:#f92672">=</span> complex_calculation()
+
+<span style="color:#75715e"># Stores data for 24hrs</span>
+cache<span style="color:#f92672">.</span>set(<span style="color:#e6db74">&#34;complex_data&#34;</span>, <span style="color:#ae81ff">60</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">60</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">24</span>)
+</code></pre></div><p>To retrieve data:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">data <span style="color:#f92672">=</span> cache<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#34;complex_data&#34;</span>)
+</code></pre></div><p>Otherwise, we can combine the two:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">data <span style="color:#f92672">=</span> cache<span style="color:#f92672">.</span>get_or_set(<span style="color:#e6db74">&#34;complex_data&#34;</span>, complex_calculation(), <span style="color:#ae81ff">60</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">60</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">24</span>)
+</code></pre></div><p>One of the considerations with caching is that at some point a user will be hit with the initial loading time. If this is unacceptable, you can run regular external tasks to load the data into cache. This way anytime a user tries to access the page they will only get cached responses rather than making the server do all the calculations.</p>
+<h2 id="loading-models-into-memory">Loading models into memory</h2>
+<p>This last approach is the idea of loading data into memory rather than relying on database queries. It should only really be used as a last resort and you have to take into consideration how large the dataset is and how much it improves performance.</p>
+<p>Imagine that you have a long list of items and for each of these items you need to call a function. Within this function, you need to gather information from the database. For example:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">long_list <span style="color:#f92672">=</span> [<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>,<span style="color:#f92672">...</span>]
+
+<span style="color:#f92672">****</span><span style="color:#66d9ef">for</span> item <span style="color:#f92672">in</span> long_list:
+	complex_calculation(item)
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">complex_calculation</span>(item):
+	data <span style="color:#f92672">=</span> Example<span style="color:#f92672">.</span>objects<span style="color:#f92672">.</span>filter(x_lt<span style="color:#f92672">=</span>item, x_gt<span style="color:#f92672">=</span>item)
+	<span style="color:#66d9ef">print</span>(data)
+</code></pre></div><p>The problem with this function is that Django will make requests for each item. Depending on the size of the list, this can dramatically slow down the page.</p>
+<p>One of the ways to get around this problem is to load the Example model into memory and then use python to filter the list.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">long_list <span style="color:#f92672">=</span> [<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>,<span style="color:#f92672">...</span>]
+
+examples <span style="color:#f92672">=</span> list(Example<span style="color:#f92672">.</span>objects<span style="color:#f92672">.</span>values(<span style="color:#e6db74">&#34;x&#34;</span>))
+
+<span style="color:#f92672">****</span><span style="color:#66d9ef">for</span> item <span style="color:#f92672">in</span> long_list:
+	complex_calculation(examples, item)
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">complex_calculation</span>(examples, item):
+	data <span style="color:#f92672">=</span> [e <span style="color:#66d9ef">for</span> e <span style="color:#f92672">in</span> examples <span style="color:#66d9ef">if</span> e[<span style="color:#e6db74">&#34;x&#34;</span>] <span style="color:#f92672">&gt;</span> item ]
+	<span style="color:#66d9ef">print</span>(data)
+</code></pre></div><p>There is a few things going on within the code:</p>
+<ol>
+<li>We get all the Example objects and only keep the x field.</li>
+<li>Convert the QuerySet into a list so that Django makes the database query.</li>
+<li>Pass the examples list into each function.</li>
+<li>Use Python list comprehension to filter the list.</li>
+</ol>
+<p>This will drastically reduce the amount of database requests and most likely improve loading times depending on the size of Example table.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>From using these three methods, we have managed to drastically reduce the loading times of some of our pages. If anyone has any other ways to improve loading times, I&rsquo;d love to hear them.</p>
+
+</div>
+
+
+    </main>
+
+    
+      
+    
+  </body>
+</html>
