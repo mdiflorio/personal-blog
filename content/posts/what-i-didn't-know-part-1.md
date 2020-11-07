@@ -1,32 +1,30 @@
 ---
-title: "What I didn't know - interview questions part 1"
-date: 2020-11-03T20:20:00+01:00
+title: "What I didn't know - Interview Questions part 1"
+date: 2020-11-07T07:20:00+01:00
 draft: false
 ---
 
-Recently, I read on HackerNews that a great way to improve is to learn and fail publicly. After feeling stupid for not knowing the response to a bunch of interview questions, I decided to find the answers to those questions here on my blog.
-
-I'm going to start writing down a list of questions that interviewers have asked me where I wasn't confident in the response I gave.
+Recently, I read that a great way to improve is to learn and fail publicly. After not knowing the response to a bunch of interview questions, I decided to find the answers to those questions here on my blog.
 
 ### What's the difference between em and rem units in CSS?
 
-Em units refer to the font size relative to the direct or nearest parent. For example, if we have a `div` where the font-size is 16px and inside this `div` we have an element that has `padding: 1em`. This is converted to `padding: 16px`.
+Em units refer to the font size relative to the direct or nearest parent. For example, if we have a `div` where the font-size is 16px and inside this `div` we have an element that has `padding: 1em`. The padding size is converted to `padding: 16px`.
 
-The same thing applies to rem, but rem isn't relative to the nearest parent it will look at the root font size.
+The same thing applies to rem, but rem isn't relative to the nearest element. Instead, it will look at the root element font size.
 
 Rather than relying on fixed pixel values which don't change, we can adapt our elements to the various font sizes in different components.
 
 While em is generally more useful, rem can be good to use with things like padding and margins. For example, if we need even spacing between elements on a page, rem would be a better fit.
 
-### What things can we do to improve indexing from the google spider when developing a SPA?
+### What things can we do to improve Google indexing when developing a SPA?
 
-Seeing as I haven't been exposed to much SEO, I'm going to start with a few points that help for any website.
+Seeing as I haven't been exposed to much in terms of SEO, I'm going to start with a few points that can help for any website.
 
 -   Make use of meta tags like title, viewport, language, social tags.
 -   Put keywords into h1, URLs and title.
 -   If you have a large site, you should consider creating a [sitemap](https://support.google.com/webmasters/answer/156184?hl=en).
--   Use HTTPs
--   Organically generate high-quality backlinks. This means getting noticed on other websites who are authorities.
+-  Always Use HTTPS.
+-   According to Google, backlinks are one of the best ways to get referenced on Google. The idea behind backlinks is pretty simple, the more people linking to your site the better. The caveat here is that it can't just be anyone linking to your site, it's much better if these sites are considered authorities. 
 
 ##### SPA specific tips:
 
@@ -37,11 +35,11 @@ Seeing as I haven't been exposed to much SEO, I'm going to start with a few poin
 
 ##### Possibilities:
 
--   Use [server-side rendering](https://ssr.vuejs.org/) to return static pages.
+-   Use [server-side rendering](https://ssr.vuejs.org/). Server-side rendering is just that, instead of sending the client all the JS and letting them render the whole page to start with. We can render pages on the server and send that version. Once the client has received the page, then their navigator can take over. This makes loading times much faster and is a direct solution to the Google indexing problem.
 -   Use something like [prerendering](https://prerender.io/) to specifically target web crawlers.
 -   Content delivery networks to speed up load times from different locations.
--   Bundle and minify code.
--   Lazy loading when possible.
+-   Bundle and minify code. This should generally help with loading times of the page.
+-   Lazy loading when possible. As in, only load essential content first.
 
 ### What are some things that we can do to improve accessibility?
 
@@ -64,7 +62,7 @@ Other considerations:
 4. Provide alternative text on images.
 5. Set language in the HTML tag.
 
-### What are the different ratings A, AA AAA?
+### What are the different ratings A, AA, AAA?
 
 The different ratings refer to the standards for accessibility. They're progressive in the sense that to have an A rating, a website needs to satisfy all of the criteria A. The AA will need to satisfy the criteria for A and AA, and so on.
 
@@ -78,10 +76,20 @@ The answer to the solution is to use WebSockets so that the clients can subscrib
 
 The way that WebSockets work is that we open a connection between the server and a client. The server or the client can then send data to each other without having to make new connections. It makes sense for real-time applications where the client or the server can subscribe to events or data changes.
 
-After speaking to the team at Nuabee, I came to realise that our Django application isn't set up to handle channels and WebSockets. As we're not running Django with ASGI, we don't have async capabilities and Django is only running on a single thread.
+After speaking to the team at Nuabee, I came to realise that our Django application isn't set up to handle channels and WebSockets. As we're not running Django with ASGI, we don't have async capabilities and Django is only running on a single thread. 
+
+Curious, I started to look into changing our WSGI web server with ASGI, and it turns out that replacing the two is extremely simple. The real problem is the amount of code that needs to be rewritten to take into account the async capabilities.
 
 ### What is AppSync from AWS?
 
 AppSync is a fully managed service that allows you to develop GraphQL APIs. It includes features such as authentication and authorisation, real-time updates to data. It also provides support for a bunch of data services like DynamoDB, AWS Lambda, Elasticsearch, etc.
 
 There is built-in offline support for the clients. For example, if a client app disconnects from the internet and that client updates their data. The data is automatically synced with the GraphQL data sources once they go back online.
+
+### How do I go about testing websites on different navigators.
+
+My response to this question was pretty simple, I normally write code and test directly on Chrome, after I'm satisfied with the result, I will switch up to other navigators to test the end result, making changes as I go. 
+
+Now that I think about it, there is probably a better way to do this. I remember seeing on HackerNews a tool that allowed you to test multiple screen sizes at the same time. But maybe there is a better way to go about testing various navigators and screen sizes. 
+
+If anyone has any ideas on how to better go about testing, I'd love to hear. 
